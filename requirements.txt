@@ -2,5 +2,5 @@ bokeh
 streamlit_bokeh
 bokeh_sampledata
 geopandas
-st_bridge
+streamlit-bridge
 plotly
