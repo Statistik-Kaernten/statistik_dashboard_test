@@ -3,4 +3,4 @@ streamlit_bokeh
 bokeh_sampledata
 geopandas
 st_bridge
-plotly.graph_objects
+plotly
