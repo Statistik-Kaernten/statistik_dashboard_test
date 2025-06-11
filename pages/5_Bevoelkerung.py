@@ -32,7 +32,7 @@ st.markdown(get_custom_css(), unsafe_allow_html=True)
 with st.sidebar:
 
     # # # MAP BEGIN # # # 
-    with open("map.html", "r", encoding="utf-8") as f:
+    with open("pages/map.html", "r", encoding="utf-8") as f:
         bokeh_map = f.read()
 
     gkz_list = components.html(f"""
@@ -74,11 +74,12 @@ st.write('## Bevölkerung')
 #st.write(f'### Bevölkerungspyramide - {select_end_jahr}')
 
 data = bridge("my-bridge", default="Keine GKZs ausgewählt")
-
+st.write(os.path.dirname(os.path.abspath(__file__)))
+st.write(data)
 gkz_list = []
 if data != 'Keine GKZs ausgewählt':
     gkz_list = [elem for elem in data["selected_gkz"] if elem != '']
-
+st.write(gkz_list)
 col1, col2 = st.columns([1, 1])
 
 with col1:
