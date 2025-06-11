@@ -73,7 +73,7 @@ st.write('## Bevölkerung')
 
 #st.write(f'### Bevölkerungspyramide - {select_end_jahr}')
 
-data = bridge("my-bridge", default="Keine GKZs ausgewählt")
+data = bridge("my-bridge")
 st.write(data)
 gkz_list = []
 if data != 'Keine GKZs ausgewählt':
