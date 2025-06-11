@@ -76,6 +76,7 @@ st.write('## Bevölkerung')
 
 data = bridge("my-bridge", default='Keine GKZs ausgewählt')
 st.write(os.path.dirname(os.path.abspath(__file__)))
+st.write(data)
 gkz_list = []
 if data != 'Keine GKZs ausgewählt':
     gkz_list = [elem for elem in data["selected_gkz"] if elem != '']
