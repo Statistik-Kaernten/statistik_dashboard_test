@@ -10,6 +10,7 @@ from map import *
 import streamlit.components.v1 as components
 import pandas as pd
 import time
+import os
 
 insert_styling(255, 255, 255, 1, 143, 68, 163, 1, 'white') 
     
