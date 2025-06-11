@@ -2,7 +2,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 from st_bridge import bridge
-from streamlit_javascript import st_javascript
+#from streamlit_javascript import st_javascript
 
 with open("map.html", "r", encoding="utf-8") as f:
         bokeh_map = f.read()
