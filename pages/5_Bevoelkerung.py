@@ -74,7 +74,7 @@ st.write('## Bevölkerung')
 #st.write(f'### Bevölkerungspyramide - {select_end_jahr}')
 
 data = bridge("my-bridge", default='Keine GKZs ausgewählt')
-st.write(data)
+st.write(os.path.dirname(os.path.abspath(__file__)))
 gkz_list = []
 if data != 'Keine GKZs ausgewählt':
     gkz_list = [elem for elem in data["selected_gkz"] if elem != '']
