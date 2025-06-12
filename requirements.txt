@@ -5,3 +5,4 @@ geopandas
 streamlit-bridge
 plotly
 streamlit_js_eval
+pandas

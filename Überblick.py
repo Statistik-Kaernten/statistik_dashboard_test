@@ -46,12 +46,21 @@
 
 import plotly.express as px
 import streamlit as st
+import pandas as pd
 
 from plotly1 import plotly_events
 # from plotly2 import plotly_events
 #from plotly3 import plotly_events
 
-df = px.data.iris()
+data = {
+    'sepal_length': [5.1, 4.9, 4.7, 6.0, 6.4],
+    'sepal_width':  [3.5, 3.0, 3.2, 2.2, 3.2],
+    'petal_length': [1.4, 1.4, 1.3, 5.0, 4.5],
+    'petal_width':  [0.2, 0.2, 0.2, 1.5, 1.5],
+    'species': ['setosa', 'setosa', 'setosa', 'versicolor', 'virginica']
+}
+
+df = pd.DataFrame(data)
 fig = px.scatter(df, x="sepal_width", y="sepal_length", title="Sample Figure")
 
 value = plotly_events(fig)
