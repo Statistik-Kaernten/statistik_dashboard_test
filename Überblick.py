@@ -6,22 +6,40 @@ import geopandas as gpd
 #from shapely.geometry import Polygon
 from data import *
 
+with st.sidebar:
+    # Slider for pitch (tilt angle)
+    pitch = st.checkbox("Tilt", value=False)
 
+    # Optional: Slider for bearing (rotation)
+    #bearing = st.slider("Adjust Map Bearing (Rotation)", min_value=0, max_value=360, value=0, step=10)
+    elevation = st.checkbox('Show elevation', value=False)
+
+    heatmap = st.checkbox('Heat-Map', value=False)
+
+
+
+if pitch == False:
+    pitched = 0
+else:
+    pitched = 25
 gdf = gpd.read_file('data/ktn_data.json')
 #gdf["lon"] = gdf.apply(lambda row: Polygon(row["geometry"]).centroid.x, axis=1)
 #gdf["lat"] = gdf.apply(lambda row: Polygon(row["geometry"]).centroid.y, axis=1)
 df = get_data('t_bev1.csv', 2025, 2025)
-print(df)
+
 df = df.groupby(["Jahr", "gkz"]).agg({'Anzahl': 'sum'}).reset_index()
 df["gkz"] = df["gkz"].astype(str)
 #df["Anzahl"] = df["Anzahl"]
-df["Color"] = df["Anzahl"].apply(lambda x: 
-                                [255, 0, 0, 255] if x > 50000 else 
-                                [255, 69, 0, 255] if x > 10000 else
-                                [255, 140, 0, 255] if x > 5000 else  
-                                [255, 185, 0, 255] if x > 2500 else 
-                                [255, 255, 0, 255] if x > 1000 else
-                                [255, 255, 255, 255])
+if heatmap:
+    df["Color"] = df["Anzahl"].apply(lambda x: 
+                                    [255, 0, 0, 255] if x > 50000 else 
+                                    [255, 69, 0, 255] if x > 10000 else
+                                    [255, 140, 0, 255] if x > 5000 else  
+                                    [255, 185, 0, 255] if x > 2500 else 
+                                    [255, 255, 0, 255] if x > 1000 else
+                                    [235, 235, 235, 255])
+else:
+    df["Color"] = '[255, 255, 255, 255]'
 
 chart_data = pd.merge(gdf, df, left_on='GKZ', right_on='gkz')
 geojson = chart_data.__geo_interface__ 
@@ -33,13 +51,6 @@ geojson = chart_data.__geo_interface__
 tooltip = {"html": "<b>Gemeinde:</b> {GEMNAM}<br/><b>Anzahl:</b> {Anzahl}", "style": {"color": "white"}}
 
 
-# Slider for pitch (tilt angle)
-pitch = st.slider("Adjust Map Pitch (Tilt)", min_value=0, max_value=60, value=0, step=5)
-
-# Optional: Slider for bearing (rotation)
-bearing = st.slider("Adjust Map Bearing (Rotation)", min_value=0, max_value=360, value=0, step=10)
-
-
 chart = pdk.Deck(
         map_provider=None,
         map_style='light_no_labels',
@@ -47,9 +58,9 @@ chart = pdk.Deck(
             latitude=46.94,
             longitude=13.81,
             zoom=7.5,
-            pitch=pitch,
-            bearing=bearing,
-            max_zoom=11,
+            pitch=pitched,
+            #bearing=bearing,
+            max_zoom=9,
             min_zoom=7.5
         ),
         layers=[
@@ -59,12 +70,12 @@ chart = pdk.Deck(
                     stroked=True,
                     filled=True,
                     id = "properties.GKZ",
-                    get_fill_color="properties.Color",
-                    #get_line_color=[0, 0, 0, 255],
-                    line_width_min_pixels=2,
+                    get_fill_color="properties.Color",#"properties.Color",
+                    get_line_color=[0, 0, 0, 255],
+                    line_width_min_pixels=1,
                     get_elevation="properties.Anzahl",
                     pickable=True,
-                    extruded=True,
+                    extruded=elevation,
                 )
             #pdk.Layer(
             #    "HexagonLayer",
@@ -88,5 +99,11 @@ chart = pdk.Deck(
 
 
 event = st.pydeck_chart(chart, on_select="rerun", selection_mode="multi-object")
-
-event.selection
+#event.selection
+gkz_list = []
+for elem in event.selection["objects"]["properties.GKZ"]:
+    gkz_list.append(f'{elem["properties"]["gkz"]}')
+#st.write(gkz_list)
+df = df[df["gkz"].isin(gkz_list)]
+df = df.groupby(["Jahr"]).agg({'Anzahl': 'sum'}).reset_index()
+st.write(df)
