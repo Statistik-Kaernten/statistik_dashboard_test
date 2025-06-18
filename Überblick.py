@@ -5,7 +5,6 @@ import pydeck as pdk
 import geopandas as gpd
 #from shapely.geometry import Polygon
 from data import *
-from dbConnection import dbConnection
 
 UNSELECTED = [100, 0, 200, 255]
 SELECTED = [245, 0, 245, 255]
