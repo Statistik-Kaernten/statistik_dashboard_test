@@ -1,109 +1,80 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
+#import numpy as np
 import pydeck as pdk
 import geopandas as gpd
 #from shapely.geometry import Polygon
 from data import *
+from dbConnection import dbConnection
+
+UNSELECTED = [100, 0, 200, 255]
+SELECTED = [245, 0, 245, 255]
+
+def set_colors(df: pd.DataFrame, gkz_list: list[str]):
+    df['Color'] = df['GKZ'].apply(lambda x: SELECTED if x in gkz_list else UNSELECTED)
+    return df
+
+gdf = gpd.read_file('data/ktn_data.json')
+
+gkz_list = []
+tooltip = {"html": "{GEMNAM}", "style": {"color": "white"}}
+
+
+regio = [str(regio) for regio in getSelectionItems() if regio != 'Gkz']
+regio.append('Eigene Auswahl')
 
 with st.sidebar:
-    # Slider for pitch (tilt angle)
-    pitch = st.checkbox("Tilt", value=False)
+    region = st.selectbox('Region:', regio)
+    if region != 'Eigene Auswahl':
+        sub_region = st.selectbox(f'{region}', [str(gkz) for gkz in getSubRegion(region)])
+        gkz_list = [str(subreg) for subreg in getGkz(region, sub_region)]
+    else:
+        gkz_list = []
 
-    # Optional: Slider for bearing (rotation)
-    #bearing = st.slider("Adjust Map Bearing (Rotation)", min_value=0, max_value=360, value=0, step=10)
-    elevation = st.checkbox('Show elevation', value=False)
-
-    heatmap = st.checkbox('Heat-Map', value=False)
-
-
-
-if pitch == False:
-    pitched = 0
-else:
-    pitched = 25
-gdf = gpd.read_file('data/ktn_data.json')
-#gdf["lon"] = gdf.apply(lambda row: Polygon(row["geometry"]).centroid.x, axis=1)
-#gdf["lat"] = gdf.apply(lambda row: Polygon(row["geometry"]).centroid.y, axis=1)
-df = get_data('t_bev1.csv', 2025, 2025)
-
-df = df.groupby(["Jahr", "gkz"]).agg({'Anzahl': 'sum'}).reset_index()
-df["gkz"] = df["gkz"].astype(str)
-#df["Anzahl"] = df["Anzahl"]
-if heatmap:
-    df["Color"] = df["Anzahl"].apply(lambda x: 
-                                    [255, 0, 0, 255] if x > 50000 else 
-                                    [255, 69, 0, 255] if x > 10000 else
-                                    [255, 140, 0, 255] if x > 5000 else  
-                                    [255, 185, 0, 255] if x > 2500 else 
-                                    [255, 255, 0, 255] if x > 1000 else
-                                    [235, 235, 235, 255])
-else:
-    df["Color"] = '[255, 255, 255, 255]'
-
-chart_data = pd.merge(gdf, df, left_on='GKZ', right_on='gkz')
-geojson = chart_data.__geo_interface__ 
-
-#chart_data = pd.DataFrame(
-#    np.random.randn(1000, 2) / [50, 50] + [46.74, 13.51],
-#    columns=["lat", "lon"],
-#)
-tooltip = {"html": "<b>Gemeinde:</b> {GEMNAM}<br/><b>Anzahl:</b> {Anzahl}", "style": {"color": "white"}}
-
+gdf = set_colors(gdf, gkz_list)
+geojson = gdf.__geo_interface__ 
 
 chart = pdk.Deck(
-        map_provider=None,
-        map_style='light_no_labels',
+        map_provider=None, #'carto'
+        map_style='light',
         initial_view_state=pdk.ViewState(
             latitude=46.94,
             longitude=13.81,
-            zoom=7.5,
-            pitch=pitched,
-            #bearing=bearing,
-            max_zoom=9,
-            min_zoom=7.5
+            zoom=6.5,
+            max_zoom=6.5,
+            min_zoom=6.5,
         ),
         layers=[
              pdk.Layer(
                     "GeoJsonLayer",
-                    data=geojson,
+                    data=geojson,       
                     stroked=True,
                     filled=True,
+                    drag_pan=False,
                     id = "properties.GKZ",
-                    get_fill_color="properties.Color",#"properties.Color",
+                    get_fill_color="properties.Color",
                     get_line_color=[0, 0, 0, 255],
-                    line_width_min_pixels=1,
-                    get_elevation="properties.Anzahl",
-                    pickable=True,
-                    extruded=elevation,
+                    line_width_min_pixels=0.5,
+                    pickable=True
                 )
-            #pdk.Layer(
-            #    "HexagonLayer",
-            #    data=chart_data,
-            #    get_position="[lon, lat]",
-            #    radius=3000,
-            #    #elevation_scale=4,
-            #    height="Anzahl",
-            #    pickable=True,
-            #    extruded=True,
-            #),
-            #pdk.Layer(
-            #    "ScatterplotLayer",
-            #    data=chart_data,
-            #    get_position="[lon, lat]",
-            #    get_color="[200, 30, 0, 160]",
-            #    get_radius=200,
-            #),
-        ],tooltip=tooltip
+        ],
+        tooltip=tooltip
     )
-
-
-event = st.pydeck_chart(chart, on_select="rerun", selection_mode="multi-object")
+with st.sidebar:
+    if region != 'Eigene Auswahl':
+        st.pydeck_chart(chart, height=250, use_container_width=True)
+    else:
+        event = st.pydeck_chart(chart, on_select="rerun", selection_mode="multi-object", height=250, use_container_width=True)
+        try: 
+            for elem in event.selection["objects"]["properties.GKZ"]:
+                gkz_list.append(f'{elem["properties"]["GKZ"]}')
+        except:
+            pass
+st.write(gkz_list)
 #event.selection
-gkz_list = []
-for elem in event.selection["objects"]["properties.GKZ"]:
-    gkz_list.append(f'{elem["properties"]["gkz"]}')
-#st.write(gkz_list)
-df = df[df["gkz"].isin(gkz_list)]
-df = df.groupby(["Jahr"]).agg({'Anzahl': 'sum'}).reset_index()
+
+df = gdf[gdf["GKZ"].isin(gkz_list)]
+#df = df.groupby(["Jahr"]).agg({'Anzahl': 'sum'}).reset_index()
+#heat_df = heat_df.sort_values('Anzahl', ascending=False)
+#st.write(heat_df)
 st.write(df)
